@@ -1,3 +1,4 @@
+# app.py
 import pandas as pd
 import requests
 from datetime import date
@@ -5,6 +6,7 @@ from sqlalchemy import create_engine
 import os
 from flask import Flask, jsonify
 from dotenv import load_dotenv
+import datetime # datetime 모듈 임포트
 
 # .env 파일 로드 (로컬 테스트용)
 load_dotenv()
@@ -65,7 +67,8 @@ def get_kbo_standings_renamed():
             # 컬럼명 변경
             df = df.rename(columns=new_column_names)
 
-            # 필요한 컬럼만 선택하고 순서 재정렬
+            # '순위' 컬럼은 KBO 웹사이트의 순위이며, team_idx가 고정된 인덱스이므로 '순위'는 필요에 따라 제외할 수 있습니다.
+            # 여기서는 요청에 따라 포함하되, team_record_idx는 DB에서 auto-increment될 것이므로 제외합니다.
             ordered_cols = ['순위', 'team_idx', '팀명', 'date', 
                             'game', 'win', 'lose', 'draw', 'win_rate', 'game_gap',
                             'recent_ten', 'streak', 'home_record', 'away_record']
@@ -102,6 +105,7 @@ def save_df_to_db(df: pd.DataFrame):
         print(f"❌ 데이터베이스 저장 중 오류 발생: {e}")
         return False
 
+# --- API 엔드포인트 정의 ---
 @app.route('/crawl_and_save_kbo_records', methods=['GET'])
 def crawl_and_save_kbo_records():
     """
@@ -129,5 +133,4 @@ def home():
 
 if __name__ == '__main__':
     # 이 블록은 gunicorn 사용 시 실행되지 않지만, 로컬 개발을 위해 남겨둘 수 있습니다.
-    # Flask 앱이 외부에서 접근 가능하도록 host='0.0.0.0' 설정
     app.run(host='0.0.0.0', port=os.getenv('PORT', 5000), debug=True)
