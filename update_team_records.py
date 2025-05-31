@@ -58,7 +58,7 @@ def get_kbo_standings_renamed():
             # 필요한 컬럼만 선택하고 순서 재정렬
             # '순위' 컬럼은 KBO 웹사이트의 순위이며, team_idx가 고정된 인덱스이므로 '순위'는 필요에 따라 제외할 수 있습니다.
             # 여기서는 요청에 따라 포함하되, team_record_idx는 DB에서 auto-increment될 것이므로 제외합니다.
-            ordered_cols = ['순위', 'team_idx', '팀명', 'date', 
+            ordered_cols = [ 'team_idx', 'date', 
                             'game', 'win', 'lose', 'draw', 'win_rate', 'game_gap',
                             'recent_ten', 'streak', 'home_record', 'away_record']
             
