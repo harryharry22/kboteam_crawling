@@ -1,7 +1,8 @@
+# update_team_records.py
 import pandas as pd
 import requests
 from datetime import date
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 import os
 from dotenv import load_dotenv
 
@@ -55,9 +56,9 @@ def get_kbo_standings_renamed():
             df = df.rename(columns=new_column_names)
 
             # 필요한 컬럼만 선택하고 순서 재정렬
-            # '팀명' 컬럼은 DB에 저장할 때 필요할 수 있으므로 일단 포함합니다.
-            # team_record_idx는 DB에서 auto-increment될 것이므로 DataFrame에는 포함하지 않습니다.
-            ordered_cols = ['team_idx', '팀명', 'date', 
+            # '순위' 컬럼은 KBO 웹사이트의 순위이며, team_idx가 고정된 인덱스이므로 '순위'는 필요에 따라 제외할 수 있습니다.
+            # 여기서는 요청에 따라 포함하되, team_record_idx는 DB에서 auto-increment될 것이므로 제외합니다.
+            ordered_cols = ['순위', 'team_idx', '팀명', 'date', 
                             'game', 'win', 'lose', 'draw', 'win_rate', 'game_gap',
                             'recent_ten', 'streak', 'home_record', 'away_record']
             
@@ -77,13 +78,13 @@ def save_to_db(df: pd.DataFrame):
     """
     if df is None or df.empty:
         print("저장할 데이터가 없습니다.")
-        return
+        return False
 
     # DB 연결 정보 가져오기 (환경 변수 또는 GitHub Actions secrets)
     db_uri = os.getenv('DB_URI')
     if not db_uri:
         print("DB_URI 환경 변수가 설정되지 않았습니다.")
-        return
+        return False
 
     try:
         # SQLAlchemy 엔진 생성
@@ -95,17 +96,18 @@ def save_to_db(df: pd.DataFrame):
         # team_record_idx는 DB에서 auto-increment되므로 DataFrame에 추가하지 않아도 됩니다.
         df.to_sql('team_record', con=engine, if_exists='append', index=False)
         print(f"✅ {len(df)}개의 KBO 팀 기록이 'team_record' 테이블에 성공적으로 추가되었습니다.")
-
+        return True
     except Exception as e:
         print(f"❌ 데이터베이스 저장 중 오류 발생: {e}")
+        return False
 
 if __name__ == "__main__":
     print("KBO 팀 기록 크롤링 및 DB 저장 스크립트 시작...")
     kbo_df = get_kbo_standings_renamed()
     
     if kbo_df is not None:
-        print("크롤링된 데이터:")
-        print(kbo_df.head()) # 상위 5개 행만 출력하여 확인
+        print("크롤링된 데이터 (상위 5개 행):")
+        print(kbo_df.head())
         save_to_db(kbo_df)
     else:
         print("KBO 팀 기록을 가져오지 못했습니다.")
