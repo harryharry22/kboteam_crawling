@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 flask==3.0.3
 lxml==5.2.2
 gunicorn
+beautifulsoup4==4.12.3
